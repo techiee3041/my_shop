@@ -47,23 +47,36 @@ const fetchUsers = asyncHandler(async (req, res) => {
 
 //Fetch a Single User
 const fetchUser = asyncHandler(async (req, res) => {
-  const {id} = req.params;
+  const { id } = req.params;
   try {
     const getUser = await User.findById(id);
     res.json(getUser);
   } catch (error) {
     throw new Error(error);
   }
-})
+});
 
 //Delete a Single User
 const deleteUser = asyncHandler(async (req, res) => {
-  const {id} = req.params;
+  const { id } = req.params;
   try {
-    const deletedUser = await User.findById(id);
+    const deletedUser = await User.findByIdAndDelete(id);
     res.json(deletedUser);
   } catch (error) {
     throw new Error(error);
   }
-})
-module.exports = { createUser, loginUser, fetchUsers, fetchUser };
+});
+
+//Update a Single User
+const updateUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const updatedUser = await User.findByIdAndUpdate(id, {
+    firstName: req?.body?.firstName,
+    lastName: req?.body?.lastName,
+    email: req?.body?.email,
+    mobile: req?.body?.mobile,
+  },
+  { new: true }
+);
+});
+module.exports = { createUser, loginUser, fetchUsers, fetchUser, deleteUser, updateUser };
