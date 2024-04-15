@@ -55,4 +55,15 @@ const fetchUser = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 })
+
+//Delete a Single User
+const deleteUser = asyncHandler(async (req, res) => {
+  const {id} = req.params;
+  try {
+    const deletedUser = await User.findById(id);
+    res.json(deletedUser);
+  } catch (error) {
+    throw new Error(error);
+  }
+})
 module.exports = { createUser, loginUser, fetchUsers, fetchUser };
