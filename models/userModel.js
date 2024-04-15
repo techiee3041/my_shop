@@ -30,7 +30,11 @@ var userSchema = new mongoose.Schema({
 userSchema.pre("save", async function (next) {
     const salt = await bycrypt.genSaltSync(10);
     this.password = await bycrypt.hash(this.password, salt);
-})
+});
+
+userSchema.methods.isPasswordMatch = async function (enteredPassword) {
+    return await bycrypt.compare(enteredPassword, this.password);
+}
 
 //Export the model
 module.exports = mongoose.model('User', userSchema);
