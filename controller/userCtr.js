@@ -2,6 +2,8 @@ const { generateToken } = require("../config/jwtToken");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
 const { validateMongodbID } = require("../utils/validateMongoDb");
+const { generateRefreshToken } = require("../config/generateRefreshToken");
+const jwt = require("jsonwebtoken");
 
 //create user
 const createUser = asyncHandler(async (req, res) => {
@@ -23,6 +25,18 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const findUser = await User.findOne({ email });
   if (findUser && findUser.isPasswordMatch(password)) {
+    const refreshToken = await generateRefreshToken(findUser._id);
+    const updateUser = await User.findByIdAndUpdate(
+      findUser._id,
+      {
+        refreshToken: refreshToken,
+      },
+      { new: true }
+    );
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      maxAge: 72 * 60 * 60 * 1000,
+    });
     res.json({
       _id: findUser?._id,
       firstName: findUser?.firstName,
@@ -70,10 +84,31 @@ const deleteUser = asyncHandler(async (req, res) => {
   }
 });
 
+//Handle refresh token
+const handleRefreshToken = asyncHandler(async (req, res) => {
+  const cookie = req.cookies;
+  if (!cookie.refreshToken) {
+    throw new Error("There is no refresh token in Cookies");
+  }
+  const refreshToken = cookie.refreshToken;
+  const user = await User.findOne({ refreshToken });
+  if (!user) throw new Error("There is no Refresh token in db or not matched");
+  jwt.verify(refreshToken, process.env.JWT_SCRET_KEY, (err, decoded) => {
+    if (err || user.id !== decoded.id) {
+      throw new Error("No refresh token in db or not matched");
+    }
+    const accessToken = generateToken(user.id);
+    res.json({accessToken})
+  });
+});
+
+//logout user
+const logoutUser = asyncHandler(async(req, res) => {})
+
 //Update a Single User
 const updateUser = asyncHandler(async (req, res) => {
   const { _id } = req.user;
-  validateMongodbID(_id)
+  validateMongodbID(_id);
   try {
     const updatedUser = await User.findByIdAndUpdate(
       _id,
@@ -140,4 +175,5 @@ module.exports = {
   updateUser,
   blockUser,
   unblockUser,
+  handleRefreshToken,
 };
