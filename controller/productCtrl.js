@@ -64,10 +64,10 @@ const deleteProduct = asyncHandler(async(req, res) => {
 //fetching all products
 const fetchProducts = asyncHandler(async (req, res) => {
   try {
+    //filtering products
     const queryObject = {...req.query};
     const excludeFields = ["page", "sort", "limit", "fields"];
     excludeFields.forEach((el) => delete queryObject[el]);
-
     let queryString = JSON.stringify(queryObject);
     queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
     const products = await Product.find(JSON.parse(queryString));
